@@ -1,0 +1,6 @@
+{
+  "name": "NovaMine",
+  "description": "Ứng dụng đào coin trên di động với giao diện trực quan, bảng điều khiển hashrate thời gian thực và ví mã hoá bảo mật cao.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
