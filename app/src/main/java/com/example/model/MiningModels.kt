@@ -24,7 +24,7 @@ data class MiningRig(
     val name: String,
     val tierTitle: String,
     val hashrateMhs: Double,
-    val costNvc: Double,
+    val costUsdt: Double,
     val powerConsumptionWatts: Int,
     val coolingEfficiency: String,
     val isUnlocked: Boolean,

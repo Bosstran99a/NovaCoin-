@@ -58,6 +58,7 @@ import com.example.components.EnterReferralCodeModal
 import com.example.components.PinSecurityLockScreen
 import com.example.components.PrivateKeyExportModal
 import com.example.components.ReceiveCryptoModal
+import com.example.components.RigPurchaseModal
 import com.example.components.SeedBackupModal
 import com.example.components.TransferInAppModal
 import com.example.components.WithdrawExternalModal
@@ -115,6 +116,8 @@ class MainActivity : ComponentActivity() {
                 val showSeedBackupDialog by viewModel.showSeedBackupDialog.collectAsStateWithLifecycle()
                 val showPrivateKeyDialog by viewModel.showPrivateKeyDialog.collectAsStateWithLifecycle()
                 val showChangePinDialog by viewModel.showChangePinDialog.collectAsStateWithLifecycle()
+                val selectedRigForPurchase by viewModel.selectedRigForPurchase.collectAsStateWithLifecycle()
+                val showRigPurchaseModal by viewModel.showRigPurchaseModal.collectAsStateWithLifecycle()
                 val toastMessage by viewModel.toastMessage.collectAsStateWithLifecycle()
 
                 val snackbarHostState = remember { SnackbarHostState() }
@@ -283,11 +286,13 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 AppNavTab.RIGS -> {
+                                    val usdtBalance = assets.find { it.symbol == "USDT" }?.balance ?: 0.0
                                     RigsScreen(
                                         rigs = miningRigs,
-                                        currentBalanceNvc = minerStatus.totalMinedNvc,
+                                        usdtBalance = usdtBalance,
                                         onEquipRig = { viewModel.equipRig(it, context) },
-                                        onPurchaseRig = { viewModel.purchaseRig(it, context) }
+                                        onOpenPurchaseRig = { viewModel.openRigPurchaseModal(it) },
+                                        onQuickDepositUsdt = { viewModel.depositUsdt(it, context) }
                                     )
                                 }
                                 AppNavTab.SECURITY -> {
@@ -366,6 +371,20 @@ class MainActivity : ComponentActivity() {
                                 viewModel.updatePin(newPin)
                             },
                             onDismiss = { viewModel.closeChangePinDialog() }
+                        )
+                    }
+
+                    if (showRigPurchaseModal && selectedRigForPurchase != null) {
+                        RigPurchaseModal(
+                            rig = selectedRigForPurchase!!,
+                            userUsdtBalance = assets.find { it.symbol == "USDT" }?.balance ?: 0.0,
+                            onConfirmPurchase = { pin ->
+                                viewModel.purchaseRigWithUsdt(selectedRigForPurchase!!.id, pin, context)
+                            },
+                            onQuickDepositUsdt = { amt ->
+                                viewModel.depositUsdt(amt, context)
+                            },
+                            onDismiss = { viewModel.closeRigPurchaseModal() }
                         )
                     }
                 }

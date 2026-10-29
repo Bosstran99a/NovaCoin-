@@ -201,54 +201,67 @@ class CryptoRepository {
             MiningRig(
                 id = "rig_micro",
                 name = "Micro Cloud Node v1",
-                tierTitle = "Cấp khởi đầu",
+                tierTitle = "Cấp khởi đầu (Dùng thử)",
                 hashrateMhs = 15.0,
-                costNvc = 0.0,
+                costUsdt = 0.0,
                 powerConsumptionWatts = 5,
                 coolingEfficiency = "Thụ động (Eco-Safe)",
                 isUnlocked = true,
-                isEquipped = false,
+                isEquipped = true,
                 description = "Node đám mây tối ưu hoá di động, không tiêu hao pin hoặc nhiệt độ máy.",
                 algorithm = "SHA-256 Cloud"
             ),
             MiningRig(
                 id = "rig_cyber_v2",
                 name = "Cyber ASIC Node v2",
-                tierTitle = "Cấp nâng cao",
-                hashrateMhs = 48.0,
-                costNvc = 15.0,
-                powerConsumptionWatts = 18,
+                tierTitle = "Mốc 20$ USDT (Tiêu chuẩn)",
+                hashrateMhs = 65.0,
+                costUsdt = 20.0,
+                powerConsumptionWatts = 22,
                 coolingEfficiency = "Tản nhiệt buồng khí AI",
-                isUnlocked = true,
-                isEquipped = true,
-                description = "ASIC ảo hoá đám mây với bộ xử lý lượng tử kép, tốc độ đào ổn định x3 lần.",
+                isUnlocked = false,
+                isEquipped = false,
+                description = "ASIC ảo hoá đám mây với bộ xử lý lượng tử kép, tốc độ đào ổn định x4.3 lần.",
                 algorithm = "SHA-256 Quantum"
             ),
             MiningRig(
                 id = "rig_quantum_hydro",
                 name = "Quantum Hydro Cluster",
-                tierTitle = "Chuyên nghiệp",
-                hashrateMhs = 120.0,
-                costNvc = 50.0,
-                powerConsumptionWatts = 45,
-                coolingEfficiency = "Hệ thống làm mát chất lỏng",
+                tierTitle = "Mốc 100$ USDT (Chuyên nghiệp)",
+                hashrateMhs = 180.0,
+                costUsdt = 100.0,
+                powerConsumptionWatts = 55,
+                coolingEfficiency = "Làm mát chất lỏng tuần hoàn",
                 isUnlocked = false,
                 isEquipped = false,
-                description = "Cụm máy đào công nghệ cao nối mạng trực tiếp tới trung tâm dữ liệu Frankfurt.",
+                description = "Cụm máy đào công nghệ cao nối mạng trực tiếp tới trung tâm dữ liệu Frankfurt, tốc độ x12 lần.",
                 algorithm = "Equihash Quantum"
             ),
             MiningRig(
                 id = "rig_solar_titan",
                 name = "Nova Solar Titan Rig",
-                tierTitle = "Đẳng cấp tối thượng",
-                hashrateMhs = 280.0,
-                costNvc = 120.0,
-                powerConsumptionWatts = 80,
-                coolingEfficiency = "Khí động học cực đại",
+                tierTitle = "Mốc 500$ USDT (Đẳng cấp cao)",
+                hashrateMhs = 520.0,
+                costUsdt = 500.0,
+                powerConsumptionWatts = 95,
+                coolingEfficiency = "Khí động học buồng áp suất",
                 isUnlocked = false,
                 isEquipped = false,
-                description = "Siêu trạm khai thác công suất cực lớn, tối đa hoá phần thưởng khối mỗi ngày.",
+                description = "Siêu trạm khai thác năng lượng mặt trời công suất cực lớn, tối đa hoá phần thưởng khối mỗi ngày.",
                 algorithm = "GhostRider Eco-Max"
+            ),
+            MiningRig(
+                id = "rig_genesis_quantum",
+                name = "Dark Matter Genesis Array",
+                tierTitle = "Mốc 1000$ USDT (Tối thượng VIP)",
+                hashrateMhs = 1450.0,
+                costUsdt = 1000.0,
+                powerConsumptionWatts = 160,
+                coolingEfficiency = "Siêu dẫn nhiệt độ âm Cryo",
+                isUnlocked = false,
+                isEquipped = false,
+                description = "Mạng lưới siêu cụm máy chủ lượng tử tối thượng, tốc độ đào x96 lần, ưu tiên xác thực khối Genesis.",
+                algorithm = "Nova-Genesis Quantum Matrix"
             )
         )
     )
@@ -437,18 +450,16 @@ class CryptoRepository {
         return true
     }
 
-    fun purchaseRig(rigId: String): Boolean {
+    fun purchaseRigWithUsdt(rigId: String): Boolean {
         val currentRigs = _miningRigs.value
         val target = currentRigs.find { it.id == rigId } ?: return false
-        val currentNvc = _minerStatus.value.totalMinedNvc
+        val currentUsdtAsset = _assets.value.find { it.symbol == "USDT" } ?: return false
 
-        if (currentNvc < target.costNvc) return false
+        if (currentUsdtAsset.balance < target.costUsdt) return false
 
-        val remainingNvc = currentNvc - target.costNvc
-        _minerStatus.update { it.copy(totalMinedNvc = remainingNvc) }
-
+        val remainingUsdt = currentUsdtAsset.balance - target.costUsdt
         _assets.update { list ->
-            list.map { if (it.symbol == "NVC") it.copy(balance = remainingNvc) else it }
+            list.map { if (it.symbol == "USDT") it.copy(balance = remainingUsdt) else it }
         }
 
         _miningRigs.value = currentRigs.map {
@@ -467,16 +478,45 @@ class CryptoRepository {
         val tx = CryptoTransaction(
             id = "tx_rig_" + UUID.randomUUID().toString().take(6),
             type = TransactionType.RIG_PURCHASE,
-            symbol = "NVC",
-            amount = target.costNvc,
+            symbol = "USDT",
+            amount = target.costUsdt,
             timestamp = System.currentTimeMillis(),
             dateString = "Vừa xong",
             status = TransactionStatus.CONFIRMED,
-            address = "Nova Rig Foundry Marketplace",
+            address = "Mở khóa dàn đào: ${target.name} (${target.costUsdt}$ USDT)",
             txHash = "0x" + UUID.randomUUID().toString().replace("-", "").take(16)
         )
         _transactions.update { listOf(tx) + it }
+
+        addSecurityLog(
+            title = "Thanh toán ${target.costUsdt}$ USDT mở khóa ${target.name}",
+            detail = "Tốc độ đào tăng vọt lên ${target.hashrateMhs} MH/s. Trừ ${target.costUsdt} USDT",
+            severity = AuditSeverity.SECURE
+        )
         return true
+    }
+
+    fun depositTestUsdt(amount: Double) {
+        _assets.update { list ->
+            list.map { if (it.symbol == "USDT") it.copy(balance = it.balance + amount) else it }
+        }
+        val tx = CryptoTransaction(
+            id = "tx_usdt_" + UUID.randomUUID().toString().take(6),
+            type = TransactionType.RECEIVED,
+            symbol = "USDT",
+            amount = amount,
+            timestamp = System.currentTimeMillis(),
+            dateString = "Vừa xong",
+            status = TransactionStatus.CONFIRMED,
+            address = "Nạp USDT vào ví (Mạng TRC-20/BEP-20)",
+            txHash = "0x" + UUID.randomUUID().toString().replace("-", "").take(16)
+        )
+        _transactions.update { listOf(tx) + it }
+        addSecurityLog(
+            title = "Nạp thành công +${amount} USDT vào ví",
+            detail = "Mạng TRC-20 xác thực thành công",
+            severity = AuditSeverity.INFO
+        )
     }
 
     // ================= WALLET: WITHDRAW & INTERNAL TRANSFER =================

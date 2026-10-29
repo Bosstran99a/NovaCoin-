@@ -1,8 +1,8 @@
 package com.example.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,14 +20,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DeviceHub
 import androidx.compose.material.icons.filled.ElectricBolt
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -38,10 +39,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.MiningRig
@@ -58,9 +61,10 @@ import com.example.ui.theme.TextSecondary
 @Composable
 fun RigsScreen(
     rigs: List<MiningRig>,
-    currentBalanceNvc: Double,
+    usdtBalance: Double,
     onEquipRig: (String) -> Unit,
-    onPurchaseRig: (String) -> Unit,
+    onOpenPurchaseRig: (MiningRig) -> Unit,
+    onQuickDepositUsdt: (Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -71,25 +75,41 @@ fun RigsScreen(
     ) {
         item {
             Spacer(modifier = Modifier.height(4.dp))
+
+            // Header Banner: USDT Rig Marketplace
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
                 color = CyberCardBg,
                 border = androidx.compose.foundation.BorderStroke(1.dp, CyberBorder)
             ) {
-                Column(modifier = Modifier.padding(18.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0xFF131D31), Color(0xFF0F172A))
+                            )
+                        )
+                        .padding(18.dp)
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("THỊ TRƯỜNG DÀN ĐÀO CLOUD", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CryptoGold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = Icons.Default.MonetizationOn, contentDescription = null, tint = CryptoGold, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("MỞ KHÓA DÀN KHAI THÁC BẰNG USDT", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CryptoGold)
+                        }
+
                         Surface(
                             color = Color(0xFF1E293B),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = "Số dư: ${"%.2f".format(currentBalanceNvc)} NVC",
+                                text = "Ví: ${"%.2f".format(usdtBalance)} USDT",
                                 color = NeonCyan,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
@@ -99,19 +119,51 @@ fun RigsScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Text("Nâng Cấp Phần Cứng Đám Mây", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
+                    Text("Các Mốc Nâng Cấp Dàn Đào (20$ - 1000$)", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Thuê các cụm ASIC ảo hóa và siêu máy chủ Quantum để tăng tốc độ đào lên gấp nhiều lần.",
+                        text = "Thợ mỏ thanh toán bằng USDT (mạng TRC-20 / BEP-20) để kích hoạt phần cứng cloud ASIC & Quantum, nâng hashrate lên đến x96 lần.",
                         fontSize = 12.sp,
-                        color = TextSecondary
+                        color = TextSecondary,
+                        lineHeight = 16.sp
                     )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Quick deposit bar for testing tiers
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Nạp thử USDT:", fontSize = 11.sp, color = TextMuted)
+                        listOf(20.0, 100.0, 500.0, 1000.0).forEach { amt ->
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF1E293B),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155)),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onQuickDepositUsdt(amt) }
+                            ) {
+                                Text(
+                                    text = "+${amt.toInt()}$",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeonCyan,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
 
+        // Rigs List
         items(rigs) { rig ->
             val isCurrent = rig.isEquipped
 
@@ -121,7 +173,7 @@ fun RigsScreen(
                 color = if (isCurrent) Color(0xFF0F2633) else CyberCardBg,
                 border = androidx.compose.foundation.BorderStroke(
                     1.5.dp,
-                    if (isCurrent) NeonCyan else CyberBorder
+                    if (isCurrent) NeonCyan else if (rig.isUnlocked) NeonEmerald else CyberBorder
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -133,16 +185,20 @@ fun RigsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
-                                    .size(42.dp)
+                                    .size(44.dp)
                                     .clip(CircleShape)
                                     .background(Color(0xFF1E293B))
-                                    .border(1.5.dp, if (isCurrent) NeonCyan else CryptoGold, CircleShape),
+                                    .border(
+                                        1.5.dp,
+                                        if (isCurrent) NeonCyan else if (rig.isUnlocked) NeonEmerald else CryptoGold,
+                                        CircleShape
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Memory,
+                                    imageVector = if (rig.isUnlocked) Icons.Default.Memory else Icons.Default.Lock,
                                     contentDescription = null,
-                                    tint = if (isCurrent) NeonCyan else CryptoGold,
+                                    tint = if (isCurrent) NeonCyan else if (rig.isUnlocked) NeonEmerald else CryptoGold,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -164,23 +220,25 @@ fun RigsScreen(
                                             shape = RoundedCornerShape(4.dp)
                                         ) {
                                             Text(
-                                                text = "ĐANG CHẠY",
+                                                text = "ĐANG ĐÀO",
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFF041E28),
-                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                             )
                                         }
                                     }
                                 }
                                 Text(
-                                    text = "${rig.tierTitle} • ${rig.algorithm}",
+                                    text = rig.tierTitle,
                                     fontSize = 11.sp,
-                                    color = TextSecondary
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (rig.costUsdt > 0) CryptoGold else NeonCyan
                                 )
                             }
                         }
 
+                        // Hashrate speed badge
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
                                 text = "${rig.hashrateMhs} MH/s",
@@ -190,7 +248,7 @@ fun RigsScreen(
                                 fontFamily = FontFamily.Monospace
                             )
                             Text(
-                                text = "Tốc độ cơ bản",
+                                text = "${rig.algorithm.take(15)}...",
                                 fontSize = 10.sp,
                                 color = TextMuted
                             )
@@ -208,7 +266,7 @@ fun RigsScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Specs badges: Cooling, Power
+                    // Specs row: Cooling & Power
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -246,13 +304,13 @@ fun RigsScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Button: Equip, In Use, or Purchase
+                    // Action buttons: Equip, Active, or Unlock with USDT (20$, 100$, 500$, 1000$)
                     if (rig.isUnlocked) {
                         if (isCurrent) {
                             OutlinedButton(
                                 onClick = {},
                                 enabled = false,
-                                modifier = Modifier.fillMaxWidth().height(42.dp),
+                                modifier = Modifier.fillMaxWidth().height(44.dp),
                                 shape = RoundedCornerShape(12.dp)
                             ) {
                                 Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = NeonCyan, modifier = Modifier.size(16.dp))
@@ -262,7 +320,7 @@ fun RigsScreen(
                         } else {
                             Button(
                                 onClick = { onEquipRig(rig.id) },
-                                modifier = Modifier.fillMaxWidth().height(42.dp),
+                                modifier = Modifier.fillMaxWidth().height(44.dp).testTag("equip_rig_${rig.id}"),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B))
                             ) {
@@ -271,18 +329,21 @@ fun RigsScreen(
                         }
                     } else {
                         Button(
-                            onClick = { onPurchaseRig(rig.id) },
-                            modifier = Modifier.fillMaxWidth().height(42.dp).testTag("purchase_rig_${rig.id}"),
+                            onClick = { onOpenPurchaseRig(rig) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .testTag("unlock_rig_${rig.id}"),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = CryptoGold)
                         ) {
-                            Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, tint = Color(0xFF2E2000), modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = Color(0xFF2E2000), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Nâng Cấp Giá ${rig.costNvc} NVC",
+                                text = "Mở Khóa Bằng ${rig.costUsdt.toInt()}$ USDT",
                                 color = Color(0xFF2E2000),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.ExtraBold
                             )
                         }
                     }

@@ -98,6 +98,12 @@ class CryptoMinerViewModel(
     private val _showEnterReferralCodeDialog = MutableStateFlow(false)
     val showEnterReferralCodeDialog: StateFlow<Boolean> = _showEnterReferralCodeDialog.asStateFlow()
 
+    private val _selectedRigForPurchase = MutableStateFlow<MiningRig?>(null)
+    val selectedRigForPurchase: StateFlow<MiningRig?> = _selectedRigForPurchase.asStateFlow()
+
+    private val _showRigPurchaseModal = MutableStateFlow(false)
+    val showRigPurchaseModal: StateFlow<Boolean> = _showRigPurchaseModal.asStateFlow()
+
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
 
@@ -150,13 +156,36 @@ class CryptoMinerViewModel(
         }
     }
 
-    fun purchaseRig(rigId: String, context: Context? = null) {
-        triggerHaptic(context, 70)
-        if (repository.purchaseRig(rigId)) {
-            showToast("Chúc mừng! Đã kích hoạt giàn đào mới!")
-        } else {
-            showToast("Số dư NovaCoin không đủ để nâng cấp!")
+    fun openRigPurchaseModal(rig: MiningRig) {
+        _selectedRigForPurchase.value = rig
+        _showRigPurchaseModal.value = true
+    }
+
+    fun closeRigPurchaseModal() {
+        _selectedRigForPurchase.value = null
+        _showRigPurchaseModal.value = false
+    }
+
+    fun purchaseRigWithUsdt(rigId: String, pin: String, context: Context? = null): Boolean {
+        if (pin != securityProfile.value.pinCode) {
+            showToast("Mã PIN bảo mật không chính xác!")
+            return false
         }
+        triggerHaptic(context, 70)
+        val success = repository.purchaseRigWithUsdt(rigId)
+        if (success) {
+            showToast("Chúc mừng! Đã mở khóa dàn đào bằng USDT thành công!")
+            closeRigPurchaseModal()
+        } else {
+            showToast("Số dư USDT trong ví không đủ để mở khóa!")
+        }
+        return success
+    }
+
+    fun depositUsdt(amount: Double, context: Context? = null) {
+        triggerHaptic(context, 40)
+        repository.depositTestUsdt(amount)
+        showToast("Đã nạp thành công +${amount.toInt()}$ USDT vào ví!")
     }
 
     // ================= WALLET ACTIONS =================
